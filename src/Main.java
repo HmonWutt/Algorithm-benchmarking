@@ -1,4 +1,3 @@
-import java.lang.invoke.StringConcatException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.io.IOException;
@@ -11,19 +10,19 @@ import java.util.function.Consumer;
 
 public class Main {
     public static void main(String[] args) throws IOException {
+        Scanner scanner = new Scanner(System.in);
         int[] input = Main.readFromFile("input.txt");
         char choice = 'z';
         do {
             Main.printMenu();
-            Scanner scanner = new Scanner(System.in);
             choice = scanner.next().charAt(0);
-            if (choice == 'x') break;
+            if (choice == 'x') return;
             if (choice =='a') {
+                System.out.println("Note: Recursive insertion sort will only run up to 10,0000");
                 Main.runAll(input);
-                Main.printMenu();
-                choice = scanner.next().charAt(0);
             }
-            try {
+            else {
+                try {
                     System.out.println("Set array size: ");
                     int arraySize = scanner.nextInt();
                     int[] copy = Arrays.copyOf(input, arraySize);
@@ -53,7 +52,7 @@ public class Main {
                                 if (pivotInput == 'x') return;
                                 int pivot = Integer.parseInt(String.valueOf(pivotInput));
                                 Main.runRecursiveQuickSort(copy, 0, pivot - 1);
-                            } catch (Exception e){
+                            } catch (Exception e) {
                                 System.out.println("Invalid option");
                             }
 
@@ -70,11 +69,12 @@ public class Main {
                         }
                         case "rb" -> Main.runBinarySearch(copy);
                         default -> System.out.println("""
-                            \nPlease choose a valid option or type x to exit""");
+                                \nPlease choose a valid option or type x to exit""");
                     }
                 } catch (Exception e) {
                     System.out.println("Input invalid.");
                 }
+            }
 
         } while (choice != 'x');
 
@@ -90,44 +90,48 @@ public class Main {
         Main.loop(arr->Quicksort.run(arr,1,0),input,1_000_000,5,"iterativeQuickSort_median");
         Main.loop(arr->Quicksort.run(arr,1,1),input,1_000_000,5,"iterativeQuickSort_random");
         Main.loop(arr->Quicksort.run(arr,1,2),input,1_000_000,5,"iterativeQuickSort_first");
-        Quicksort.run(input,0,2);
         Main.loop(arr->
         {
             int target = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
             boolean found = BinarySearch.search(arr,target,0,arr.length-1);
         }, input,1_000_000,5,"binarySearch");
     }
-    public static void runBinarySearch(int[]copy){
+    public static void runBinarySearch(int[]copy) throws InterruptedException{
         int target = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
         Quicksort.run(copy,0,2);
         System.out.println("\nBinary searching target element "+target+" in array size of "+copy.length+"...");
         Main.timeTaken(arr -> {
             BinarySearch.search(copy, target, 0, copy.length - 1);
-        });
+
+        }, copy.length);
+        Thread.sleep(1000);
     }
-    public static void runIterativeInsertionSort(int[]copy)  {
+    public static void runIterativeInsertionSort(int[]copy)  throws InterruptedException {
         System.out.println("\nSorting an array size of "+copy.length+" using iterative insertion sort...");
         Main.timeTaken(arr -> {
                 InsertionSort.iterativeSort(copy);
-            });
+            }, copy.length);
+        Thread.sleep(1000);
     }
-    public static void runRecursiveInsertionSort(int[]copy) {
+    public static void runRecursiveInsertionSort(int[]copy) throws InterruptedException{
         if (copy.length > 100_000){
             System.out.println("\nThis algorithm will not run for bigger arrays. The size has been reduced to 100_000");
-            int [] reduced = Arrays.copyOf(copy,100_00);
+            int [] reduced = Arrays.copyOf(copy,100_000);
             System.out.println("Sorting an array size of "+reduced.length+" using recursive insertion sort...");
             Main.timeTaken(arr->{
                 InsertionSort.recursiveSort(reduced, reduced.length);
-            });
+            }, copy.length);
+            Thread.sleep(1000);
             return;
         }
         System.out.println("\nSorting an array size of "+copy.length+" using recursive insertion sort...");
         Main.timeTaken(arr->{
                InsertionSort.recursiveSort(copy, copy.length);
-           });
+           }, copy.length);
+        Thread.sleep(1000);
     }
 
-    public static void runIterativeQuickSort(int[]copy, int methodInput, int pivotInput){
+    public static void runIterativeQuickSort(int[]copy, int methodInput, int pivotInput) throws InterruptedException {
         String pivot = "";
         if (pivotInput == 0) pivot = "first element as pivot";
         else if (pivotInput == 1) pivot = "random pivot";
@@ -135,9 +139,10 @@ public class Main {
         System.out.println("\nSorting an array size of "+copy.length+"using iterative quick sort using "+pivot+"...");
         Main.timeTaken(arr->{
                 Quicksort.run(copy,methodInput,pivotInput);
-            });
+            },copy.length);
+        Thread.sleep(1000);
     }
-    public static void runRecursiveQuickSort(int[]copy, int methodInput, int pivotInput){
+    public static void runRecursiveQuickSort(int[]copy, int methodInput, int pivotInput) throws InterruptedException {
         String pivot = "";
         if (pivotInput == 0) pivot = "first element as pivot";
         else if (pivotInput == 1) pivot = "random pivot";
@@ -145,14 +150,16 @@ public class Main {
         System.out.println("\nSorting an array size of "+copy.length+"using recursive quick sort using "+ pivot+"...");
         Main.timeTaken(arr->{
                 Quicksort.run(copy,methodInput,pivotInput);
-            });
+            }, copy.length);
+        Thread.sleep(1000);
     }
-    public static void timeTaken(Consumer<int[]> callback)  {
+    public static void timeTaken(Consumer<int[]> callback, int length)  {
         long startTime = System.nanoTime();
         callback.accept(new int[0]);
         long endTime = System.nanoTime();
         long duration = (endTime - startTime)  ; // measured in nano seconds as ms gives 0
-        System.out.println("Time taken: " + duration );
+        System.out.println("Time taken: " + duration+", array length: "+ length);
+        Main.printDivider();
     }
 
     public static void loop(Consumer<int[]> callback, int[] input, int maxArraySize, int numInterations, String metaData) {
@@ -201,5 +208,8 @@ public class Main {
                 x to exit.
                 """;
         System.out.println(content);
+    }
+    public static void printDivider(){
+        System.out.println("\n==============================================================================================");
     }
 }
